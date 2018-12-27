@@ -33,7 +33,7 @@ class ApartmentModel(DeclarativeBase):
 
     id = Column(Integer, primary_key=True)
 
-    index = Column('index', Integer)
+    url = Column('url', String())
     address = Column('address', String())
     rent = Column('rent', Float())
     livingspace = Column('squaremeter', Float()) # in m**2
@@ -44,14 +44,15 @@ class ApartmentModel(DeclarativeBase):
     # title = scrapy.Field()
     # description = scrapy.Field()
 
-    feature_type = Column('apartment_type', String())
-    feature_rooms = Column('rooms', String())
-    feature_floor = Column('floor', String())
-    feature_available = Column('avaliable', String())
+    apartment_type = Column('apartment_type', String())
+    rooms = Column('rooms', Float())
+    floor = Column('floor', Float())
+    available = Column('avaliable', String())
 
     def __repr__(self):
 
-        return "<Apartment {:} m**2 / {:} chf - {:}>".format(
+        return "<Apartment {:} {:} m2 / {:} chf - {:}>".format(
+            self.id,
             self.livingspace,
             self.rent,
             self.address)

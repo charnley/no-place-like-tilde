@@ -24,13 +24,16 @@ class ApartmentPipeline(object):
 
         # convert from ApartmentItem to ApartmentModel
         model = models.ApartmentModel()
+        model.url = item['url']
         model.address = item['address']
         model.rent = item['rent']
         model.rooms = item['rooms']
+        model.livingspace = item['livingspace']
 
         try:
             session.add(model)
             session.commit()
+            print(model)
 
         except:
             session.rollback()

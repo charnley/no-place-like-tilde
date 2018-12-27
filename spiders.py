@@ -14,6 +14,9 @@ import scrapy
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.log import configure_logging
 
+import items
+
+
 class ApartmentsSpider(scrapy.Spider):
     """
 
@@ -94,38 +97,37 @@ class ApartmentSpider(scrapy.Spider):
         if self.debug:
             print('Parsing {}'.format(response.url))
 
-        yield {"url" : response.url}
+
 
         # Sells title
         title = response.css('h1.title::text').extract()
-        yield {"title" : title[0]}
+        title = title[0]
 
         # Apartment images
         find_imgs = response.css('.slide img::attr(data-lazy)').extract()
         for img in find_imgs:
-            yield {"img_url": img}
+            pass
 
         # Appendix (such as floor plan)
         appendix = response.css(".detail-address-addendum a::attr(href)").extract()
         appendix = set(appendix)
         appendix = list(appendix)
         for app in appendix:
-            yield {"appendix": app}
+            pass
 
         # Addresse
         address = response.css(".detail-address-link *::text").extract()
         address = [add.strip() for add in address]
         address = list(filter(None, address))
         address = ", ".join(address)
-        yield {"address" : address}
 
         # Description
         description = response.css(".description-content *::text").extract()
         description = "\n".join(description)
-        yield {"description" : description}
 
         # Features (such as sizes etc)
         features = response.css(".detail-key-data li")
+        features_dict = {}
 
         for feature in features:
             # Extract feature_name and feature_value
@@ -138,16 +140,15 @@ class ApartmentSpider(scrapy.Spider):
                 name = texts[0]
                 name = name.lower()
                 name = name.replace(" ", "_")
-
                 value = texts[1]
 
-                yield {name : value}
-
+                features_dict[name] = value
 
         # Extra Features (such as cats)
 
         # Rent
         rents = response.css('.detail-price li')
+        rents_dict = {}
         for feature in rents:
 
             # Get name
@@ -169,21 +170,19 @@ class ApartmentSpider(scrapy.Spider):
                 value = value[0]
                 value = float(value)
 
-                yield {name : value}
+                rents_dict[name] = value
 
 
-class ApartmentPipeline(object):
+        # Init item
+        item = items.ApartmentItem()
 
-    def open_spider(self, spider):
-        self.file = open('item.jl', 'w')
+        item['url'] = response.url
+        item['rooms'] = float(features_dict['rooms'])
+        item['livingspace'] = float(features_dict['living_space'])
+        item['rent'] = rents_dict['rent']
+        item['address'] = address
 
-    def close_spider(self, spider):
-        self.file.close()
-
-    def process_item(self, item, spider):
-        line = json.dumps(dict(item)) + "\n"
-        self.file.write(line)
-        return item
+        yield item
 
 
 def main():
@@ -195,17 +194,19 @@ def main():
 
     configure_logging({'LOG_FORMAT': '%(levelname)s: %(message)s'})
 
-    process = CrawlerProcess({
-        'USER_AGENT': 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)',
-        'FEED_FORMAT': 'json',
-        'FEED_URI': 'result.json',
-        'LOG_LEVEL': 'WARNING',
-    })
+    settings = {}
+    settings['USER_AGENT'] = 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)'
+    settings['FEED_FORMAT'] = 'json'
+    settings['FEED_URI'] = 'result.json'
+    settings['LOG_LEVEL'] = 'WARNING'
+    settings['ITEM_PIPELINES'] = {'pipelines.ApartmentPipeline': 300}
 
-    process.crawl(ApartmentsSpider, area="city-basel")
+    process = CrawlerProcess(settings)
 
-    # process.crawl(ApartmentSpider, homegate_index=108889746)
-    # process.crawl(ApartmentSpider, homegate_index=109457421)
+    # process.crawl(ApartmentsSpider, area="city-basel")
+    process.crawl(ApartmentSpider, homegate_index=108889746)
+    process.crawl(ApartmentSpider, homegate_index=109457421)
+
     process.start() # the script will block here until the crawling is finished
 
 
