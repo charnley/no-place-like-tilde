@@ -8,9 +8,6 @@ class ApartmentItem(scrapy.Item):
     address = scrapy.Field()
     rent = scrapy.Field()
 
-    images = scrapy.Field()
-    appendix = scrapy.Field()
-
     title = scrapy.Field()
     description = scrapy.Field()
 
@@ -20,6 +17,8 @@ class ApartmentItem(scrapy.Item):
     livingspace = scrapy.Field()
     available = scrapy.Field()
 
+    images = scrapy.Field()
+    appendix = scrapy.Field()
 
 
 if __name__ == "__main__":
