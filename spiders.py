@@ -17,6 +17,23 @@ from scrapy.utils.log import configure_logging
 
 import items
 
+import models
+from sqlalchemy.orm import sessionmaker
+
+def check_url(url):
+    """
+
+    TODO this is the wrong way to do it
+
+    """
+
+    engine = models.db_connect()
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    exists = session.query(models.ApartmentModel).filter_by(url=url).count() > 0
+
+    return exists
+
 
 class ApartmentSpider(scrapy.Spider):
     """
@@ -45,10 +62,18 @@ class ApartmentSpider(scrapy.Spider):
             # offset = "&ep=30"
 
             # Set first request url
-            self.start_urls = [self.base_url_apartment_list + offset]
+            self.start_urls = [self.base_url_apartment_list]
 
         if homegate_index:
             self.start_urls = [self.base_url_apartment.format(homegate_index)]
+
+    def start_requests(self):
+
+        for url in self.start_urls:
+            if "real-esate" in url:
+                yield scrapy.Request(url, callback=self.parse)
+            else:
+                yield scrapy.Request(url, callback=self.parse_apartment)
 
 
     def parse(self, response):
@@ -64,6 +89,10 @@ class ApartmentSpider(scrapy.Spider):
 
         for apartment in apartments:
             apartment_url = self.base_url_apartment.format(apartment)
+
+            exists = check_url(apartment_url)
+            if exists: continue
+
             request = scrapy.Request(url=apartment_url, callback=self.parse_apartment)
             yield request
 
@@ -72,8 +101,6 @@ class ApartmentSpider(scrapy.Spider):
 
         if next_page:
             next_page = next_page[0]
-            # next_page = next_page.split("?")
-            # next_page = next_page[-1]
             next_page = parse.urlsplit(next_page)
             next_page = parse.parse_qs(next_page.query)
             next_page = dict(next_page)
@@ -89,21 +116,19 @@ class ApartmentSpider(scrapy.Spider):
 
     def parse_apartment(self, response):
 
+        print(response.url)
+
         # Sells title
         title = response.css('h1.title::text').extract()
         title = title[0]
 
         # Apartment images
         find_imgs = response.css('.slide img::attr(data-lazy)').extract()
-        for img in find_imgs:
-            pass
 
         # Appendix (such as floor plan)
         appendix = response.css(".detail-address-addendum a::attr(href)").extract()
         appendix = set(appendix)
         appendix = list(appendix)
-        for app in appendix:
-            pass
 
         # Addresse
         address = response.css(".detail-address-link *::text").extract()
@@ -185,6 +210,11 @@ class ApartmentSpider(scrapy.Spider):
 
         item['address'] = address
 
+        item['description'] = title + "\n" + description
+
+        item['images'] = list(find_imgs)
+        item['appendix'] = list(appendix)
+
         yield item
 
 
@@ -206,10 +236,46 @@ def main():
 
     process = CrawlerProcess(settings)
 
+    basel_zip = [
+        4000,
+        4001,
+        4002,
+        4005,
+        4009,
+        4010,
+        4018,
+        4019,
+        4020,
+        4030,
+        4031,
+        4039,
+        4041,
+        4051,
+        4052,
+        4052,
+        4053,
+        4054,
+        4055,
+        4056,
+        4057,
+        4058,
+        4059,
+        4070,
+        4075,
+        4089,
+        4091
+    ]
+
+
+    # print(check_url("https://www.homegate.ch/rent/2147611144"))
+    # quit()
+
     # process.crawl(ApartmentSpider, area="zip-4056")
-    process.crawl(ApartmentSpider, area="city-basel")
-    # process.crawl(ApartmentSpider, homegate_index=108889746)
+
+    # process.crawl(ApartmentSpider, area="city-basel")
+    process.crawl(ApartmentSpider, homegate_index=108889746)
     # process.crawl(ApartmentSpider, homegate_index=109457421)
+
 
     process.start() # the script will block here until the crawling is finished
 
