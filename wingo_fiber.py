@@ -5,6 +5,37 @@ import time
 
 JERRY_URL = "https://checkout.wingo.ch/leads"
 
+
+def get_address(addresstr):
+
+    elements = addresstr.split(",")
+
+    # assert len(elements) == 2
+
+    left = elements[0].split()
+
+    # assert len(left) == 2
+
+    right = elements[1].split()
+
+    # assert len(right) == 2
+
+    # For example
+    # address = {}
+    # address['street'] = 'Luzernerring'
+    # address['house_nr'] = 85
+    # address['zip'] = 4056
+    # address['city'] = 'Basel'
+
+    addressdict = dict()
+    addressdict['street'] = left[0].strip()
+    addressdict['house_nr'] = int(left[1])
+    addressdict['zip'] = int(right[0])
+    addressdict['city'] = right[1].strip()
+
+    return addressdict
+
+
 def check_address(address, tech='ftth', debug=False):
     """
 
@@ -105,11 +136,24 @@ def main():
 
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('-f', '--filename', type=str, help='', metavar='file')
+    parser.add_argument('-a', '--addr', type=str, help='', metavar='address in switzerland')
     args = parser.parse_args()
 
-    test_luzernerring()
-    test_blumenrain()
+    # test_luzernerring()
+    # test_blumenrain()
+
+    if args.addr is None:
+        print("Please specify addresse. For example 'Burgfelderstrasse 257, 4055 Basel'")
+        quit()
+
+    # address = get_address('Burgfelderstrasse 257, 4055 Basel')
+    address = get_address(args.addr)
+
+    if address:
+        result, message = check_address(address)
+
+        print(result)
+        print(message)
 
     return
 
