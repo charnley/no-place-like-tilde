@@ -1,8 +1,44 @@
 
 from sqlalchemy.orm import sessionmaker
 
+import requests
+import os
+
 import json
 import models
+
+def save_appendix(model, item):
+
+    idx = model.id
+    print("saving", idx)
+
+    # Init
+    directory = "results/{:}".format(5)
+    if not os.path.exists(directory):
+        os.mkdir(directory)
+
+    # Download images
+    for i, url in enumerate(item['images']):
+        response = requests.get(url, stream=True)
+        ext = url.split(".")[-1]
+
+        with open(directory + '/img_{:}.{:}'.format(i, ext), 'wb') as f:
+            f.write(response.content)
+
+        del response
+
+    # Download appendix
+    for i, url in enumerate(item['appendix']):
+        response = requests.get(url, stream=True)
+        ext = url.split(".")[-1]
+
+        with open(directory + '/app_{:}.{:}'.format(i, ext), 'wb') as f:
+            f.write(response.content)
+
+        del response
+
+    return
+
 
 class ApartmentPipeline(object):
 
@@ -22,6 +58,11 @@ class ApartmentPipeline(object):
 
         session = self.Session()
 
+        # is this a new apartment
+        exists = session.query(models.ApartmentModel).filter_by(url=item['url']).count() > 0
+        if exists:
+            return item
+
         # convert from ApartmentItem to ApartmentModel
         model = models.ApartmentModel()
         model.url = item['url']
@@ -33,6 +74,7 @@ class ApartmentPipeline(object):
         try:
             session.add(model)
             session.commit()
+            save_appendix(model, item)
             print(model)
 
         except:
@@ -42,20 +84,5 @@ class ApartmentPipeline(object):
         finally:
             session.close()
 
-        return item
-
-
-
-class ApartmentJsonPipeline(object):
-
-    def open_spider(self, spider):
-        self.file = open('item.jl', 'w')
-
-    def close_spider(self, spider):
-        self.file.close()
-
-    def process_item(self, item, spider):
-        line = json.dumps(dict(item)) + "\n"
-        self.file.write(line)
         return item
 
