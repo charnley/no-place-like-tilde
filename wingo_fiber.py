@@ -8,18 +8,6 @@ JERRY_URL = "https://checkout.wingo.ch/leads"
 
 def get_address(addresstr):
 
-    elements = addresstr.split(",")
-
-    # assert len(elements) == 2
-
-    left = elements[0].split()
-
-    # assert len(left) == 2
-
-    right = elements[1].split()
-
-    # assert len(right) == 2
-
     # For example
     # address = {}
     # address['street'] = 'Luzernerring'
@@ -27,9 +15,20 @@ def get_address(addresstr):
     # address['zip'] = 4056
     # address['city'] = 'Basel'
 
+    elements = addresstr.split(",")
+
+    if len(elements) is not 2:
+        return False
+
+    left = elements[0].split()
+    right = elements[1].split()
+
+    if len(right) is not 2:
+        return False
+
     addressdict = dict()
-    addressdict['street'] = left[0].strip()
-    addressdict['house_nr'] = int(left[1])
+    addressdict['street'] = " ".join(left[:-1]).strip()
+    addressdict['house_nr'] = int(left[-1])
     addressdict['zip'] = int(right[0])
     addressdict['city'] = right[1].strip()
 
