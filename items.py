@@ -21,6 +21,7 @@ class ApartmentItem(scrapy.Item):
     available = scrapy.Field()
 
 
+
 if __name__ == "__main__":
 
     apartment = ApartmentItem(url="http:/google.com", rent=1600)

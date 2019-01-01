@@ -3,9 +3,10 @@
 Apartment scrape and obj model for homegate
 
 """
-# import SQLalchemey
-# import sqlite
 # import googletrans
+# import googlemaps
+# TODO check for high-speed internet
+# https://www.wingo.ch/de/internet
 
 from urllib import parse
 
@@ -17,30 +18,37 @@ from scrapy.utils.log import configure_logging
 import items
 
 
-class ApartmentsSpider(scrapy.Spider):
+class ApartmentSpider(scrapy.Spider):
     """
 
     Get list of currently avaliable apartment indexes
 
     """
 
-    name = "apartment_list_spider"
-    debug = True
+    name = "HomegateSpider"
+    start_urls = []
+    debug = False
 
-    base_url = ""
+    base_url_apartment = "https://www.homegate.ch/rent/{:d}"
+    base_url_apartment_list = "https://www.homegate.ch/rent/real-estate/{:s}/matching-list?tab=list&o=sortToplisting-desc"
 
-    def __init__(self, area=None, **kwargs):
+    def __init__(self, area=None, homegate_index=None, **kwargs):
         super().__init__(**kwargs)
 
-        self.base_url = "https://www.homegate.ch/rent/real-estate/{:s}/matching-list?tab=list&o=sortToplisting-desc".format(area)
+        if area:
 
-        # minimum rooms
-        self.base_url += "&ac=2"
+            self.base_url_apartment_list = self.base_url_apartment_list.format(area)
 
-        offset = "&ep=30"
+            # minimum rooms
+            # self.base_url_apartment_list += "&ac=2"
 
-        # Set first request url
-        self.start_urls = [self.base_url + offset]
+            # offset = "&ep=30"
+
+            # Set first request url
+            self.start_urls = [self.base_url_apartment_list + offset]
+
+        if homegate_index:
+            self.start_urls = [self.base_url_apartment.format(homegate_index)]
 
 
     def parse(self, response):
@@ -55,7 +63,9 @@ class ApartmentsSpider(scrapy.Spider):
         apartments = [int(apartment) for apartment in apartments]
 
         for apartment in apartments:
-            yield {"apartment": apartment}
+            apartment_url = self.base_url_apartment.format(apartment)
+            request = scrapy.Request(url=apartment_url, callback=self.parse_apartment)
+            yield request
 
         # Next page
         next_page = response.css(".paginator-container li.next a::attr(href)").extract()
@@ -71,33 +81,13 @@ class ApartmentsSpider(scrapy.Spider):
 
             ep = next_page["ep"]
 
-            next_page_url = self.base_url + "&ep=" + ep
+            next_page_url = self.base_url_apartment_list + "&ep=" + ep
             request = scrapy.Request(url=next_page_url)
 
             yield request
 
 
-
-class ApartmentSpider(scrapy.Spider):
-    """
-
-    spider for endividual apartments on homegate
-
-    """
-
-    name = "apartmentspider"
-    debug = True
-
-    def __init__(self, homegate_index=None, **kwargs):
-        super().__init__(**kwargs)
-        self.start_urls = ["https://www.homegate.ch/rent/{:d}".format(homegate_index)]
-
-    def parse(self, response):
-
-        if self.debug:
-            print('Parsing {}'.format(response.url))
-
-
+    def parse_apartment(self, response):
 
         # Sells title
         title = response.css('h1.title::text').extract()
@@ -177,9 +167,22 @@ class ApartmentSpider(scrapy.Spider):
         item = items.ApartmentItem()
 
         item['url'] = response.url
-        item['rooms'] = float(features_dict['rooms'])
-        item['livingspace'] = float(features_dict['living_space'])
-        item['rent'] = rents_dict['rent']
+
+        try:
+            item['rooms'] = float(features_dict['rooms'])
+        except:
+            item['rooms'] = None
+
+        try:
+            item['livingspace'] = float(features_dict['living_space'])
+        except:
+            item['livingspace'] = None
+
+        try:
+            item['rent'] = rents_dict['rent']
+        except:
+            item['rent'] = None
+
         item['address'] = address
 
         yield item
@@ -203,9 +206,10 @@ def main():
 
     process = CrawlerProcess(settings)
 
-    # process.crawl(ApartmentsSpider, area="city-basel")
-    process.crawl(ApartmentSpider, homegate_index=108889746)
-    process.crawl(ApartmentSpider, homegate_index=109457421)
+    # process.crawl(ApartmentSpider, area="zip-4056")
+    process.crawl(ApartmentSpider, area="city-basel")
+    # process.crawl(ApartmentSpider, homegate_index=108889746)
+    # process.crawl(ApartmentSpider, homegate_index=109457421)
 
     process.start() # the script will block here until the crawling is finished
 

@@ -33,6 +33,9 @@ class ApartmentModel(DeclarativeBase):
 
     id = Column(Integer, primary_key=True)
 
+    # TODO DateInitial
+    # TODO DateRemoved
+
     url = Column('url', String())
     address = Column('address', String())
     rent = Column('rent', Float())
