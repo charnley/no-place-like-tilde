@@ -5,6 +5,7 @@ import time
 
 JERRY_URL = "https://checkout.wingo.ch/leads"
 
+from urllib.parse import quote
 
 def get_address(addresstr):
 
@@ -15,24 +16,30 @@ def get_address(addresstr):
     # address['zip'] = 4056
     # address['city'] = 'Basel'
 
-    elements = addresstr.split(",")
+    try:
 
-    if len(elements) is not 2:
+        elements = addresstr.split(",")
+
+        if len(elements) is not 2:
+            return False
+
+        left = elements[0].split()
+        right = elements[1].split()
+
+        if len(right) is not 2:
+            return False
+
+        addressdict = dict()
+        addressdict['street'] = " ".join(left[:-1]).strip()
+        addressdict['house_nr'] = int(left[-1])
+        addressdict['zip'] = int(right[0])
+        addressdict['city'] = right[1].strip()
+
+        return addressdict
+
+    except:
+
         return False
-
-    left = elements[0].split()
-    right = elements[1].split()
-
-    if len(right) is not 2:
-        return False
-
-    addressdict = dict()
-    addressdict['street'] = " ".join(left[:-1]).strip()
-    addressdict['house_nr'] = int(left[-1])
-    addressdict['zip'] = int(right[0])
-    addressdict['city'] = right[1].strip()
-
-    return addressdict
 
 
 def check_address(address, tech='ftth', debug=False):
@@ -43,7 +50,7 @@ def check_address(address, tech='ftth', debug=False):
     response, status = create_request(address, tech=tech, debug=debug)
 
     if status is not 200:
-        return False, "Error 17"
+        return None, "Error - " + str(status)
 
     result, message = check_request(response['lead_id'], response['lead_token'], debug=debug)
 
@@ -73,7 +80,7 @@ def check_request(lead_id, lead_token, debug=False):
         response = r.json()
 
         if "error_s" in response:
-            return False, "API error"
+            return None, "API error"
 
         completed = response['completed']
 
@@ -87,6 +94,8 @@ def create_request(address, tech='ftth', debug=False):
 
     """
 
+    address['street'] = quote(address['street'])
+
     payload = "check_tech={tech}&address%5Bstreet%5D={street}&address%5Bhouse_nr%5D={house_nr}&address%5Bzip%5D={zip}&address%5Bcity%5D={city}"
     payload = payload.format(**address, tech=tech)
 
@@ -94,12 +103,11 @@ def create_request(address, tech='ftth', debug=False):
     status = r.status_code
 
     if not status == 200:
-        return "", status
+        return None, status
 
     response = r.json()
 
     return response, status
-
 
 
 def test_luzernerring():

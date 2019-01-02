@@ -70,7 +70,7 @@ class ApartmentSpider(scrapy.Spider):
     def start_requests(self):
 
         for url in self.start_urls:
-            if "real-esate" in url:
+            if "matching-list" in url:
                 yield scrapy.Request(url, callback=self.parse)
             else:
                 yield scrapy.Request(url, callback=self.parse_apartment)
@@ -115,8 +115,6 @@ class ApartmentSpider(scrapy.Spider):
 
 
     def parse_apartment(self, response):
-
-        print(response.url)
 
         # Sells title
         title = response.css('h1.title::text').extract()
@@ -272,8 +270,8 @@ def main():
 
     # process.crawl(ApartmentSpider, area="zip-4056")
 
-    # process.crawl(ApartmentSpider, area="city-basel")
-    process.crawl(ApartmentSpider, homegate_index=108889746)
+    process.crawl(ApartmentSpider, area="city-basel")
+    # process.crawl(ApartmentSpider, homegate_index=108889746)
     # process.crawl(ApartmentSpider, homegate_index=109457421)
 
 

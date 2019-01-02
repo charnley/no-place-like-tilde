@@ -7,13 +7,14 @@ import os
 import json
 import models
 
+import wingo_fiber
+
 def save_appendix(model, item):
 
     idx = model.id
-    print("saving", idx)
 
     # Init
-    directory = "results/{:}".format(5)
+    directory = "results/{:}".format(idx)
     if not os.path.exists(directory):
         os.mkdir(directory)
 
@@ -29,8 +30,12 @@ def save_appendix(model, item):
 
     # Download appendix
     for i, url in enumerate(item['appendix']):
-        response = requests.get(url, stream=True)
+
         ext = url.split(".")[-1]
+        if ext is not "pdf":
+            continue
+
+        response = requests.get(url, stream=True)
 
         with open(directory + '/app_{:}.{:}'.format(i, ext), 'wb') as f:
             f.write(response.content)
@@ -74,7 +79,7 @@ class ApartmentPipeline(object):
         try:
             session.add(model)
             session.commit()
-            save_appendix(model, item)
+
             print(model)
 
         except:
