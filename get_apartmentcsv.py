@@ -30,7 +30,7 @@ def main():
     for model in apartments:
         print(model)
 
-    with open('angela.csv', 'w') as outcsv:
+    with open('apartments_dump.csv', 'w') as outcsv:
 
         header = [
             'id',
