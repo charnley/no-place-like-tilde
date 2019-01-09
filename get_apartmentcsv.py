@@ -3,7 +3,9 @@ import csv
 
 import models
 from models import ApartmentModel
+
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import or_, not_
 
 import location
 import wingo_fiber
@@ -23,9 +25,9 @@ def main():
 
     session = Session()
     apartments = session.query(ApartmentModel) \
-        .filter(ApartmentModel.livingspace >= 45) \
-        .filter(ApartmentModel.internet == "success") \
-        .filter(ApartmentModel.rent <= 1600)
+        .filter(ApartmentModel.available == None) \
+        .filter(ApartmentModel.rent <= 1600) \
+        .filter(ApartmentModel.livingspace >= 45)
 
     for model in apartments:
         print(model)

@@ -5,8 +5,33 @@ from sqlalchemy.orm import sessionmaker
 import location
 import wingo_fiber
 
+import requests
+
 engine = models.db_connect()
 Session = sessionmaker(bind=engine)
+
+
+def update_avaliability():
+
+    session = Session()
+    exists = session.query(models.ApartmentModel).filter_by(available=None)
+
+    for model in exists:
+
+        url = model.url
+        r = requests.get(url)
+
+        if r.status_code == 404:
+            model.available = "no"
+            print(url, "no")
+            session.commit()
+        else:
+            print(url)
+
+    session.commit()
+
+    return
+
 
 def update_locations():
 
@@ -29,7 +54,19 @@ def update_locations():
     return
 
 
-def update_internet():
+def get_distance(model):
+
+    gps = model.gps
+    if gps is None:
+        return None
+
+    gps = eval(gps)
+    dis = location.get_distance(gps)
+
+    return dis
+
+
+def update_internet(distance=None):
 
     session = Session()
     exists = session.query(models.ApartmentModel).filter_by(internet=None)
@@ -40,17 +77,20 @@ def update_internet():
 
         if address:
 
+            if distance is None: pass
+            else:
+                sbb_distance = get_distance(model)
+                if sbb_distance is None: continue
+                if sbb_distance > distance: continue
+
             result, message = wingo_fiber.check_address(address)
 
             if result:
-
                 model.internet = result
-
             else:
-
                 model.internet = "man"
 
-            print(model.id, result, message)
+            print("{:20d} {:}".format(model.id, result, message))
 
     session.commit()
 
@@ -64,9 +104,9 @@ def main():
     parser.add_argument('-f', '--filename', type=str, help='', metavar='file')
     args = parser.parse_args()
 
-
-    update_locations()
-    update_internet()
+    # update_avaliability()
+    # update_locations()
+    update_internet(distance=5.0)
 
     return
 

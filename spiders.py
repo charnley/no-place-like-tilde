@@ -3,10 +3,6 @@
 Apartment scrape and obj model for homegate
 
 """
-# import googletrans
-# import googlemaps
-# TODO check for high-speed internet
-# https://www.wingo.ch/de/internet
 
 from urllib import parse
 
@@ -20,6 +16,9 @@ import items
 import models
 from sqlalchemy.orm import sessionmaker
 
+engine = models.db_connect()
+Session = sessionmaker(bind=engine)
+
 def check_url(url):
     """
 
@@ -27,8 +26,6 @@ def check_url(url):
 
     """
 
-    engine = models.db_connect()
-    Session = sessionmaker(bind=engine)
     session = Session()
     exists = session.query(models.ApartmentModel).filter_by(url=url).count() > 0
 
@@ -264,16 +261,14 @@ def main():
         4091
     ]
 
-
-    # print(check_url("https://www.homegate.ch/rent/2147611144"))
-    # quit()
-
-    # process.crawl(ApartmentSpider, area="zip-4056")
-
-    process.crawl(ApartmentSpider, area="city-basel")
+    # process.crawl(ApartmentSpider, area="city-basel")
     # process.crawl(ApartmentSpider, homegate_index=108889746)
     # process.crawl(ApartmentSpider, homegate_index=109457421)
+    # process.crawl(ApartmentSpider, area="zip-4056")
+    # print(check_url("https://www.homegate.ch/rent/2147611144"))
 
+    for zipcode in basel_zip:
+        process.crawl(ApartmentSpider, area="zip-{}".format(zipcode))
 
     process.start() # the script will block here until the crawling is finished
 
