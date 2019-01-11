@@ -90,7 +90,7 @@ def update_internet(distance=None):
             else:
                 model.internet = "man"
 
-            print("{:20d} {:}".format(model.id, result, message))
+            print("{:20d} {:} {:}".format(model.id, result, message))
 
     session.commit()
 
@@ -102,11 +102,20 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', '--filename', type=str, help='', metavar='file')
+    parser.add_argument('--check_locations', action="store_true", help='')
+    parser.add_argument('--check_internet', action="store_true", help='')
+    parser.add_argument('--check_avaliable', action="store_true", help='')
     args = parser.parse_args()
 
-    # update_avaliability()
-    # update_locations()
-    update_internet(distance=5.0)
+    if args.check_locations:
+        update_locations()
+
+    if args.check_internet:
+        update_internet(distance=2.0)
+
+    if args.check_avaliable:
+        update_avaliability()
+
 
     return
 

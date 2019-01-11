@@ -264,7 +264,7 @@ def main():
     # process.crawl(ApartmentSpider, area="city-basel")
     # process.crawl(ApartmentSpider, homegate_index=108889746)
     # process.crawl(ApartmentSpider, homegate_index=109457421)
-    # process.crawl(ApartmentSpider, area="zip-4056")
+    # process.crawl(ApartmentSpider, area="zip-4059")
     # print(check_url("https://www.homegate.ch/rent/2147611144"))
 
     for zipcode in basel_zip:

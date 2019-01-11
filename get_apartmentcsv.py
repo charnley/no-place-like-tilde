@@ -27,7 +27,7 @@ def main():
     apartments = session.query(ApartmentModel) \
         .filter(ApartmentModel.available == None) \
         .filter(ApartmentModel.rent <= 1600) \
-        .filter(ApartmentModel.livingspace >= 45)
+        .filter(ApartmentModel.livingspace >= 40)
 
     for model in apartments:
         print(model)

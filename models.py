@@ -55,9 +55,9 @@ class ApartmentModel(DeclarativeBase):
 
     def __repr__(self):
 
-        return "<Apartment {:} {:} m2 / {:} chf - {:}>".format(
+        return "<Apartment {:} {:} m2 / {:} chf {:} | {:}>".format(
             self.id,
             self.livingspace,
             self.rent,
-            self.address)
-
+            self.address,
+            self.url)
