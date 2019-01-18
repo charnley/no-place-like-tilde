@@ -261,6 +261,8 @@ def main():
         4091
     ]
 
+    basel_zip += [4102, 4123, 4127, 4132, 4133]
+
     # process.crawl(ApartmentSpider, area="city-basel")
     # process.crawl(ApartmentSpider, homegate_index=108889746)
     # process.crawl(ApartmentSpider, homegate_index=109457421)
