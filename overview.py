@@ -56,12 +56,25 @@ def main():
     ax.set_ylabel('Ratio [chf/m2]', fontweight='medium', fontsize=13)
 
 
-    handles, labels = ax.get_legend_handles_labels()
-    handles = [h[0] for h in handles]
-    # ax.legend(handles, labels, loc='upper right', frameon=False, numpoints=1)
+    for chf in [1000, 1500, 2000]:
+        livingspaces = range(10, 200)
+        livingspaces = list(livingspaces)
+        chf_ratios = []
+        for livingspace in livingspaces:
+            ratio = chf / livingspace
+            chf_ratios.append(ratio)
+        ax.plot(livingspaces, chf_ratios, label=str(chf) + " chf")
+
+
+    leg = ax.legend(loc="best", borderaxespad=0.1, framealpha=1.0, fancybox=False, borderpad=1)
+    leg.get_frame().set_linewidth(0.0)
+    leg.get_frame().set_facecolor('#ffffff')
 
     ax.yaxis.grid(True, zorder=0)
     ax.xaxis.grid(True, zorder=0)
+
+    ax.set_xlim((0, 200))
+    ax.set_ylim((10, 40))
 
     filename = "fig_ratio_overview"
 
