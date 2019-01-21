@@ -1,5 +1,5 @@
 
-all: spider update
+all: spider update apartments_dump.csv
 
 update:
 	python3 updater.py --check_locations --check_internet
@@ -10,6 +10,6 @@ spider:
 still_avaliable:
 	python3 updater.py --check_avaliable
 
-out:
+apartments_dump.csv: database.db get_apartmentcsv.py
 	python3 get_apartmentcsv.py
 
