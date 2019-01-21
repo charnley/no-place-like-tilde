@@ -36,7 +36,6 @@ def main():
         if livingspace < 10: continue
         if rent is None: continue
         ratio = rent / livingspace
-
         if ratio > 75: continue
 
         distances.append(distance)
