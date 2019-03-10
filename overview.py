@@ -1,4 +1,4 @@
-
+import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
@@ -49,7 +49,14 @@ def main():
 
     fig, ax = plt.subplots(1, 1, figsize=(5, 5))
 
-    ax.plot(sqm, ratios, 'k.')
+    ax.plot(sqm, ratios, 'k.', alpha=0.3)
+
+    # heatmap, xedges, yedges = np.histogram2d(sqm, ratios, bins=(100, 50))
+    # extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
+    # ax.imshow(heatmap.T, extent=extent, origin='lower')
+
+    # plt.hist2d(sqm, ratios, bins=100)
+
 
     ax.set_xlabel('Livingspace [m2]', fontweight='medium', fontsize=13)
     ax.set_ylabel('Ratio [chf/m2]', fontweight='medium', fontsize=13)

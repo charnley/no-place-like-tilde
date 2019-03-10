@@ -8,6 +8,14 @@ geolocator = Nominatim(user_agent="specify_your_app_name_here")
 
 
 def get_gps(address):
+    """
+
+    """
+
+    address = address.split(",")
+    address[0] = address[0].split("/")[0]
+    address[0] = address[0].split("(")[0]
+    address = ",".join(address)
 
     location = geolocator.geocode(address)
 

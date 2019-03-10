@@ -26,7 +26,7 @@ def main():
     session = Session()
     apartments = session.query(ApartmentModel) \
         .filter(ApartmentModel.available == None) \
-        .filter(ApartmentModel.rent <= 1600) \
+        .filter(ApartmentModel.rent <= 1700) \
         .filter(ApartmentModel.livingspace >= 40)
 
     for model in apartments:
@@ -49,6 +49,13 @@ def main():
         writer.writerow(header)
 
         for model in apartments:
+
+            # try:
+            #     dis = location.get_distance(eval(model.gps))
+            #     if dis > 2.0: continue
+            # except:
+            #     pass
+
             writer.writerow([
                 model.id,
                 model.internet,
