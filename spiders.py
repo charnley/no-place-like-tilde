@@ -19,6 +19,15 @@ from sqlalchemy.orm import sessionmaker
 engine = models.db_connect()
 Session = sessionmaker(bind=engine)
 
+def parse_get_url(url):
+
+    url = parse.urlsplit(url)
+    url = parse.parse_qs(url.query)
+    url = dict(url)
+    url = {k: v[0] for k, v in url.items()}
+
+    return url["ep"]
+
 def check_url(url):
     """
 
@@ -61,6 +70,8 @@ class ApartmentSpider(scrapy.Spider):
             # Set first request url
             self.start_urls = [self.base_url_apartment_list]
 
+            print(self.start_urls)
+
         if homegate_index:
             self.start_urls = [self.base_url_apartment.format(homegate_index)]
 
@@ -73,60 +84,159 @@ class ApartmentSpider(scrapy.Spider):
                 yield scrapy.Request(url, callback=self.parse_apartment)
 
 
-    def parse(self, response):
+    def parse(self, response, childs=True, **kwargs):
 
         if self.debug:
             print('Parsing {}'.format(response.url))
 
         # Find all apartment indexes
 
-        apartments = response.css(".result-item-list a.detail-page-link::attr(href)").extract()
-        apartments = [apartment.replace("/rent/", "") for apartment in apartments]
-        apartments = [int(apartment) for apartment in apartments]
+        apartment_selector = "div > a"
+        apartments = response.css(apartment_selector + "::attr(href)").extract()
+        apartments = [apartment for apartment in apartments if "rent" in apartment]
+        # apartments = [apartment.replace("/rent/", "") for apartment in apartments]
+        # apartments = [int(apartment) for apartment in apartments]
 
-        for apartment in apartments:
-            apartment_url = self.base_url_apartment.format(apartment)
+        # Find apartment info
+        for a in apartments:
 
-            exists = check_url(apartment_url)
-            if exists: continue
+            idx = a.replace("/rent/", "")
+            idx = int(idx)
+            sel = f"a[href='{a}']"
 
-            request = scrapy.Request(url=apartment_url, callback=self.parse_apartment)
-            yield request
+            # addr
+            sel_data = "ResultlistItem_data_"
+            selector = f"{sel} div[class^='{sel_data}'] > p ::text"
+            addr = response.css(selector).extract()
+            addr = addr[-1]
+
+            # price
+            sel_price = "ListingPriceSimple_price"
+            selector = f"{sel} span[class^='{sel_price}'] ::text"
+            price = response.css(selector).extract()
+            try:
+                value = price[2]
+                value = value.replace(",", "")
+                value = value.split(".")
+                value = value[0]
+                value = float(value)
+            except:
+                value = None
+
+            # rooms
+            sel_room = "RoomNumber_value_"
+            selector = f"{sel} span[class^='{sel_room}'] ::text"
+            n_rooms = response.css(selector).extract()
+            n_rooms = "".join(n_rooms)
+            n_rooms = n_rooms.replace("rm", "")
+            try:
+                n_rooms = float(n_rooms)
+            except:
+                n_rooms = None
+
+            # square meter
+            sel_sqm = "LivingSpace_value_"
+            selector = f"{sel} span[class^='{sel_sqm}'] ::text"
+            square_meters = response.css(selector).extract()
+            square_meters = "".join(square_meters).replace("m2", "")
+            try:
+                square_meters = float(square_meters)
+            except:
+                square_meters = None
+
+            # Init item
+            item = items.ApartmentItem()
+            item['url'] = self.base_url_apartment.format(idx)
+            item['rooms'] = n_rooms
+            item['livingspace'] = square_meters
+            item['rent'] = value
+            item['address'] = addr
+            item['description'] = None
+            item['images'] = None
+            item['appendix'] = None
+
+            yield item
+
+
+        # old
+        # apartments = response.css(".result-item-list a.detail-page-link::attr(href)").extract()
+
+        # OLD VERSION
+        # for apartment in apartments:
+        #     apartment_url = self.base_url_apartment.format(apartment)
+        #
+        #     exists = check_url(apartment_url)
+        #     if exists: continue
+        #
+        #     # TODO make partional function call with kwargs
+        #     kwargs = {
+        #         "addr": None,
+        #     }
+        #
+        #     request = scrapy.Request(url=apartment_url, callback=self.parse_apartment, cb_kwargs=kwargs)
+        #     yield request
+
 
         # Next page
-        next_page = response.css(".paginator-container li.next a::attr(href)").extract()
+        # next_page = response.css(".paginator-container li.next a::attr(href)").extract()
 
-        if next_page:
-            next_page = next_page[0]
-            next_page = parse.urlsplit(next_page)
-            next_page = parse.parse_qs(next_page.query)
-            next_page = dict(next_page)
-            next_page = {k: v[0] for k, v in next_page.items()}
+        if childs:
 
-            ep = next_page["ep"]
+            sel_next = "HgPaginationSelector_centerBox_"
+            # selector = f"nav[class^='{sel_next}'] a[class^='HgPaginationSelector_nextPreviousArrow_'] ::attr(href)"
+            selector = f"nav[class^='{sel_next}'] a ::attr(href)"
+            next_page = response.css(selector).extract()
 
-            next_page_url = self.base_url_apartment_list + "&ep=" + ep
-            request = scrapy.Request(url=next_page_url)
+            next_page = [parse_get_url(url) for url in next_page]
+            next_page = [int(url) for url in next_page]
+            try:
+                max_pages = max(next_page)
+            except:
+                max_pages = 0
 
-            yield request
+            for ep in range(2, max_pages+1):
+
+                next_page_url = self.base_url_apartment_list + "&ep=" + str(ep)
+
+                print(next_page_url)
+
+                kwargs = {
+                    'childs': False
+                }
+
+                request = scrapy.Request(url=next_page_url, callback=self.parse, cb_kwargs=kwargs)
+
+                yield request
 
 
-    def parse_apartment(self, response):
+
+    def parse_apartment(self, response, **kwargs):
+
+        if "addr" in kwargs:
+            address = kwargs["addr"]
+        else:
+            address = None
 
         # Sells title
-        title = response.css('h1.title::text').extract()
-        title = title[0]
+        # title = response.css('h1.title::text').extract()
+        # title = title[0]
+        title = ""
 
         # Apartment images
-        find_imgs = response.css('.slide img::attr(data-lazy)').extract()
+        find_imgs = response.css('.glide__track img::attr(data-lazy)').extract()
 
         # Appendix (such as floor plan)
-        appendix = response.css(".detail-address-addendum a::attr(href)").extract()
+        # appendix = response.css(".detail-address-addendum a::attr(href)").extract()
+        appendix = []
         appendix = set(appendix)
         appendix = list(appendix)
 
         # Addresse
-        address = response.css(".detail-address-link *::text").extract()
+        selector = scrapy.Selector(response)
+        address = selector.xpath('//address[contains(@class, "AddressDetails_address_")]')
+        # address = response.css('address[class*="AddressDetails_address_"]')
+        # address = response.css(".detail-address-link *::text").extract()
+
         address = [add.strip() for add in address]
         address = list(filter(None, address))
         address = ", ".join(address)
@@ -268,6 +378,8 @@ def main():
     # process.crawl(ApartmentSpider, homegate_index=109457421)
     # process.crawl(ApartmentSpider, area="zip-4059")
     # print(check_url("https://www.homegate.ch/rent/2147611144"))
+
+    # process.crawl(ApartmentSpider, homegate_index=3000223774)
 
     for zipcode in basel_zip:
         process.crawl(ApartmentSpider, area="zip-{}".format(zipcode))

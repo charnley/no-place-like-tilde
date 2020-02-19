@@ -4,10 +4,10 @@ import geopy
 from geopy.distance import geodesic
 from geopy.geocoders import Nominatim
 
-geolocator = Nominatim(user_agent="specify_your_app_name_here")
+geolocator = Nominatim(user_agent="homegate_scraper")
 
 
-def get_gps(address):
+def get_gps(address, country="ch"):
     """
 
     """
@@ -17,7 +17,7 @@ def get_gps(address):
     address[0] = address[0].split("(")[0]
     address = ",".join(address)
 
-    location = geolocator.geocode(address)
+    location = geolocator.geocode(address, country=country)
 
     if location is None:
         return None

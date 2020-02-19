@@ -1,0 +1,6 @@
+scrapy
+sqlalchemy
+geopy
+numpy
+matplotlib
+requests

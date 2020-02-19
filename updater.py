@@ -40,7 +40,11 @@ def update_locations():
 
     for model in exists:
 
-        pos = location.get_gps(model.address)
+        try:
+            pos = location.get_gps(model.address)
+        except:
+            print("nogps: ", model.address)
+            continue
 
         if pos is None:
             continue
