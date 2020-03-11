@@ -17,7 +17,7 @@ def get_gps(address, country="ch"):
     address[0] = address[0].split("(")[0]
     address = ",".join(address)
 
-    location = geolocator.geocode(address, country=country)
+    location = geolocator.geocode(address)
 
     if location is None:
         return None
